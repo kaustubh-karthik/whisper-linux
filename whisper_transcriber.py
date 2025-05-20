@@ -1,4 +1,5 @@
 import os
+import sys
 import pyaudio
 import numpy as np
 import whisper
@@ -53,9 +54,20 @@ def load_model():
     global model
     print(f"Loading Whisper model: {MODEL_SIZE} (CPU mode)...")
     try:
+        # Determine if we're running as a packaged app or from source
+        if getattr(sys, 'frozen', False):
+            # Running as packaged app
+            base_path = sys._MEIPASS
+            download_root = os.path.join(base_path, 'whisper_models')
+            print(f"Running as packaged app, using bundled model from: {download_root}")
+        else:
+            # Running from source
+            download_root = os.path.expanduser("~/.cache/whisper")
+            print(f"Running from source, using model from: {download_root}")
+        
         # Load the model on CPU
         device = "cpu"
-        model = whisper.load_model(MODEL_SIZE, device=device, download_root=os.path.expanduser("~/.cache/whisper"))
+        model = whisper.load_model(MODEL_SIZE, device=device, download_root=download_root)
         print(f"Whisper model loaded successfully on CPU.")
     except Exception as e:
         print(f"Error loading Whisper model: {e}")
