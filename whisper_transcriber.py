@@ -10,10 +10,24 @@ import subprocess
 import threading
 import time
 import scipy.signal as signal
+import torch
+import warnings
+import logging
+
+# Suppress ALSA error messages
+# Redirect stderr for ALSA error messages
+os.environ['ALSA_CARD'] = 'Generic'  # Use generic device
+logging.getLogger('ALSA').setLevel(logging.ERROR)  # Set ALSA logger to ERROR level
+warnings.filterwarnings("ignore", category=UserWarning)  # Ignore user warnings
 
 # Configuration
-MODEL_SIZE = "medium"  # Options: tiny, base, small, medium, large
-USE_GPU = True  # Enable GPU acceleration for faster transcription
+MODEL_SIZE = "small"  # Options: tiny, base, small, medium, large
+USE_GPU = False  # Disabled GPU to use CPU only
+CPU_OFFLOAD = False  # Not needed when using CPU only
+DEVICE_MAP = None  # Not used in CPU mode
+FP16_MODE = False  # Not needed for CPU mode
+# RTX 3070 has 8GB VRAM - these settings are optimized for this GPU
+MAX_SPLIT_SIZE_MB = 128  # Limit memory split size for better memory management
 SAMPLE_RATE_RECORDING = 44100  # Standard sample rate that most hardware supports
 SAMPLE_RATE_WHISPER = 16000  # Whisper expects 16kHz audio
 CHANNELS = 1
@@ -37,27 +51,15 @@ model = None
 
 def load_model():
     global model
-    print(f"Loading Whisper model: {MODEL_SIZE}...")
+    print(f"Loading Whisper model: {MODEL_SIZE} (CPU mode)...")
     try:
-        # Check for CUDA availability
-        import torch
-        has_cuda = torch.cuda.is_available()
-        if USE_GPU and has_cuda:
-            print(f"CUDA is available. Using GPU: {torch.cuda.get_device_name(0)}")
-            device = "cuda"
-        else:
-            if USE_GPU and not has_cuda:
-                print("CUDA is not available despite USE_GPU=True. Falling back to CPU.")
-            device = "cpu"
-            print("Using CPU for inference.")
-        
-        # Load the model with the specified device
-        model = whisper.load_model(MODEL_SIZE, device=device)
-        print(f"Whisper model loaded successfully on {device}.")
+        # Load the model on CPU
+        device = "cpu"
+        model = whisper.load_model(MODEL_SIZE, device=device, download_root=os.path.expanduser("~/.cache/whisper"))
+        print(f"Whisper model loaded successfully on CPU.")
     except Exception as e:
         print(f"Error loading Whisper model: {e}")
         print("Please ensure you have a compatible PyTorch version installed and the model files are accessible.")
-        print("You might need to run this script with GPU support if using larger models and have a CUDA-enabled GPU.")
         exit()
 
 def check_audio_levels(data):
@@ -246,10 +248,10 @@ def stop_record_and_transcribe():
         # Start transcription time
         start_time = time.time()
         
-        # Add more verbose options for debugging
+        # CPU-only transcription
         result = model.transcribe(
             tmp_audio_filename, 
-            fp16=USE_GPU,  # Use half-precision with GPU for faster inference
+            fp16=False,  # CPU mode, no FP16
             verbose=DEBUG,
             language="en",  # Explicitly set language to English
             temperature=0.0  # Use lower temperature for more deterministic results
@@ -308,6 +310,8 @@ def on_release(key):
             if not all(k in current_keys_pressed for k in ACTIVATION_KEYS): # and not all activation keys are still pressed
                 stop_record_and_transcribe()
 
+# GPU memory stats function removed as we're using CPU only
+
 
 if __name__ == "__main__":
     # Check for scipy
@@ -318,21 +322,8 @@ if __name__ == "__main__":
         subprocess.run(["pip", "install", "scipy"], check=True)
         print("SciPy installed successfully.")
     
-    # Check for CUDA if USE_GPU is True
-    if USE_GPU:
-        try:
-            import torch
-            if torch.cuda.is_available():
-                print(f"CUDA is available: {torch.cuda.get_device_name(0)}")
-                print(f"CUDA version: {torch.version.cuda}")
-                print(f"PyTorch CUDA version: {torch.version.cuda}")
-            else:
-                print("CUDA is not available. Check your PyTorch installation.")
-                print("Falling back to CPU mode.")
-                USE_GPU = False
-        except ImportError:
-            print("PyTorch not found. GPU acceleration disabled.")
-            USE_GPU = False
+    # Running in CPU-only mode
+    print("Running in CPU-only mode - no GPU will be used.")
     
     # Test audio setup
     if DEBUG:

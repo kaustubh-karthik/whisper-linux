@@ -1,4 +1,7 @@
 openai-whisper
 pynput
-sounddevice
-pyperclip 
+pyaudio
+pyperclip
+scipy
+torch
+xdotool 
