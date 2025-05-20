@@ -52,11 +52,22 @@ else
     python -c "import whisper; whisper.load_model('$MODEL_NAME', download_root='$MODEL_DIR')"
 fi
 
+# Copy the icon from Downloads
+ICON_PATH="$HOME/Downloads/whisper_icon.png"
+if [ -f "$ICON_PATH" ]; then
+    echo "Copying icon from $ICON_PATH..."
+    cp "$ICON_PATH" "whisper-linux-icon.png"
+else
+    echo "Error: Icon not found at $ICON_PATH"
+    exit 1
+fi
+
 # Package the application with PyInstaller
 echo "Packaging application with PyInstaller..."
 pyinstaller --clean \
             --onefile \
             --add-data "$MODEL_DIR:whisper_models" \
+            --add-data "whisper-linux-icon.png:." \
             --collect-all torch \
             --collect-all tqdm \
             --collect-all numpy \
@@ -84,9 +95,40 @@ if ! command -v xclip &> /dev/null; then
     sudo apt-get install -y xclip xdotool
 fi
 
+# Check if PortAudio is installed
+if ! ldconfig -p | grep -q libportaudio; then
+    echo "PortAudio is not installed. Installing..."
+    sudo apt-get install -y portaudio19-dev
+fi
+
+# Check if model exists
+MODEL_DIR="$SCRIPT_DIR/whisper_models"
+MODEL_FILE="$MODEL_DIR/small.pt"
+
+if [ ! -d "$MODEL_DIR" ]; then
+    mkdir -p "$MODEL_DIR"
+fi
+
+if [ ! -f "$MODEL_FILE" ]; then
+    echo "Whisper model not found. Downloading..."
+    # Download model using curl (fallback method)
+    MODEL_URL="https://openaipublic.azureedge.net/main/whisper/models/9ecf779972d90ba49c06d968637d720dd632c55bbf19d441fb42bf17a411e794/small.pt"
+    curl -L "$MODEL_URL" -o "$MODEL_FILE"
+    echo "Model downloaded to $MODEL_FILE"
+fi
+
+# Copy icon to the right place if needed
+if [ -f "$SCRIPT_DIR/whisper-linux-icon.png" ] && [ ! -f "/usr/local/share/icons/whisper-linux.png" ]; then
+    sudo mkdir -p /usr/local/share/icons/
+    sudo cp "$SCRIPT_DIR/whisper-linux-icon.png" /usr/local/share/icons/whisper-linux.png
+fi
+
 # Run the executable
 ./whisper-linux
 EOL
+
+# Copy the icon to the dist directory
+cp whisper-linux-icon.png dist/
 
 # Make the wrapper script executable
 chmod +x dist/run-whisper-linux.sh

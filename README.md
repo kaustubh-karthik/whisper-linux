@@ -1,122 +1,90 @@
-# Whisper Linux Transcriber
+# Whisper Linux
 
-A Linux application that transcribes speech to text using OpenAI's Whisper model. This application allows you to transcribe speech by pressing Ctrl+Shift, recording audio while the keys are pressed, and automatically pasting the transcribed text into the active window when the keys are released.
+A Linux desktop application for real-time speech-to-text transcription using OpenAI's Whisper model.
 
 ## Features
 
-- Press and hold Right Ctrl + Right Shift to record audio
-- Release keys to transcribe speech and paste text into the active window
-- GPU acceleration with CUDA for fast transcription
-- Memory optimizations for GPUs with limited VRAM (like RTX 3070)
-- Audio enhancement for improved transcription quality
-- Automatic resampling of audio to Whisper's required format
-
-## Requirements
-
-- Linux operating system
-- NVIDIA GPU with CUDA support (recommended, but CPU mode is available)
-- Conda environment for dependency management
-- xclip and xdotool for clipboard and window management
-- PortAudio for audio recording
+- Trigger transcription with keyboard shortcut (Ctrl+Shift)
+- Record audio and automatically transcribe speech
+- Paste transcribed text into the active application window
+- Works across all applications and text fields
+- Audio enhancement for quieter recordings
+- CPU-only mode for systems without dedicated GPUs
 
 ## Installation
 
-### Automatic Setup (Recommended)
+### Option 1: Build from source
 
-1. Clone this repository
-2. Make sure you have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda installed
-3. Run the setup script:
+1. Ensure you have the prerequisites:
+   ```bash
+   sudo apt-get install python3-pip python3-dev portaudio19-dev xclip xdotool
+   ```
 
-```bash
-./setup.sh
-```
+2. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/whisper-linux.git
+   cd whisper-linux
+   ```
 
-This script will:
-- Create a new Conda environment called 'whisper-linux'
-- Install all required system dependencies
-- Install Python dependencies with CUDA support
-- Verify your GPU configuration
+3. Package the application:
+   ```bash
+   ./package.sh
+   ```
 
-### Manual Installation
+4. Install as a desktop application:
+   ```bash
+   ./install_application.sh
+   ```
 
-If you prefer to install manually:
+### Option 2: Download prebuilt package
 
-1. Create and activate the Conda environment:
-
-```bash
-conda create -n whisper-linux python=3.10
-conda activate whisper-linux
-```
-
-2. Install system dependencies:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y portaudio19-dev xclip xdotool
-```
-
-3. Install Python dependencies:
-
-```bash
-pip install openai-whisper pynput pyaudio pyperclip scipy
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-```
-
-4. Verify GPU support:
-
-```bash
-python check_gpu.py
-```
+*Coming soon*
 
 ## Usage
 
-### Manual Start
+Once installed, you can use Whisper Linux in two ways:
 
-1. Run the start script:
+1. **From the application menu**: Search for "Whisper Linux" in your application launcher
+2. **Using keyboard shortcuts**: Press `Ctrl+Shift` to start recording, release to transcribe
 
-```bash
-./start_whisper.sh
-```
+When you press and hold `Ctrl+Shift`, the application will record audio from your microphone. When you release the keys, it will transcribe the recorded audio and paste the text where your cursor is located.
 
-2. Press and hold Right Ctrl + Right Shift to record audio
-3. Speak clearly into your microphone
-4. Release the keys to transcribe and paste the text into the active window
+## Set up autostart
 
-### Automatic Start (Optional)
-
-To have the application start automatically when you log in:
+To make Whisper Linux start automatically when you log in:
 
 ```bash
 ./install_autostart.sh
 ```
 
-This will create a desktop entry that launches the application at login. The application will run silently in the background.
-
-## Configuration
-
-You can modify the following settings in `whisper_transcriber.py`:
-
-- `MODEL_SIZE`: Choose from "tiny", "base", "small", "medium", or "large" (larger models are more accurate but slower)
-- `USE_GPU`: Enable/disable GPU acceleration
-- `INPUT_DEVICE`: Set a specific audio input device or leave as None for default
-- `ACTIVATION_KEYS`: Change the key combination used to activate recording
-
-## GPU Memory Optimization
-
-The application includes several optimizations for GPUs with limited VRAM:
-
-- FP16 precision for reduced memory usage
-- CPU offloading to free up GPU memory
-- Memory split size restrictions
-- CUDA memory allocation optimizations
-- TF32 acceleration where available
-
 ## Troubleshooting
 
-- If audio recording isn't working, check your microphone settings and try changing the `INPUT_DEVICE` parameter
-- If GPU acceleration isn't working, verify your CUDA installation with `python check_gpu.py`
-- If you encounter memory errors, try using a smaller model size or enabling CPU_OFFLOAD
+- **Missing dependencies**: Make sure you have all required system packages
+  ```bash
+  sudo apt-get install portaudio19-dev xclip xdotool
+  ```
+
+- **Audio input issues**: Check your microphone settings in the system sound settings
+
+- **Model download issues**: If the model doesn't download automatically, you can manually download it from [OpenAI's Whisper models](https://github.com/openai/whisper/blob/main/model-card.md) and place it in the appropriate directory
+
+## Uninstallation
+
+To uninstall the application from your system:
+
+```bash
+sudo rm -rf /usr/local/share/whisper-linux
+sudo rm /usr/local/bin/run-whisper-linux.sh
+sudo rm /usr/local/share/icons/whisper-linux.png
+sudo rm /usr/local/share/applications/whisper-linux.desktop
+sudo update-desktop-database /usr/local/share/applications/
+```
 
 ## License
 
-This project uses OpenAI's Whisper model which is under the MIT License. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [OpenAI Whisper](https://github.com/openai/whisper) for the speech recognition model
+- The Python community for the excellent libraries that made this possible 

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Whisper Linux
+Comment=Speech-to-text transcription using OpenAI's Whisper
+Exec=/usr/local/bin/run-whisper-linux.sh
+Icon=/usr/local/share/icons/whisper-linux.png
+Terminal=false
+Categories=Utility;AudioVideo;
+Keywords=transcription;speech;audio;recording; 
